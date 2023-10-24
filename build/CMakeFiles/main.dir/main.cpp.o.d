@@ -1664,4 +1664,7 @@ CMakeFiles/main.dir/main.cpp.o: \
  /usr/include/vtk-9.1/vtkPolygon.h \
  /usr/include/vtk-9.1/vtkUnstructuredGrid.h \
  /usr/include/vtk-9.1/vtkUnstructuredGridBase.h \
- /usr/include/pcl-1.12/pcl/segmentation/region_growing.h
+ /usr/include/pcl-1.12/pcl/segmentation/region_growing.h \
+ /usr/include/pcl-1.12/pcl/features/normal_3d_omp.h \
+ /usr/include/pcl-1.12/pcl/filters/conditional_removal.h \
+ /usr/include/pcl-1.12/pcl/features/don.h
