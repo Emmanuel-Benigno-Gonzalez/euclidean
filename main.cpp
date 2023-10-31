@@ -51,14 +51,15 @@ int main()
   cout << "PointCloud before filtering has: " << cloud->size() << " data points." << endl;
 
   // Aplicar Filtro romoveNAN
-  vector<int> indices = RemoveNAN(cloud);  
+  //vector<int> indices = RemoveNAN(cloud);  
 
   // Algoritmo EuclideanClusterExtraction
   /*double tolerancia = 0.0045;
   int minTamanio = 500;
   int maxTamanio = 10000;
   vector<PointIndices> clusters = euclideanClusterExtraction(cloud, indices, tolerancia, minTamanio, maxTamanio);
-  vector<int> indicesSegmentados = guardarIndicesSegmentados(clusters);*/
+  vector<int> indicesSegmentados = guardarIndicesSegmentados(clusters);
+  */
 
   //Difference Of Normals
   vector<PointIndices> clusters = differenceOfNormals(cloud); 
@@ -100,13 +101,27 @@ int main()
     int colorB = rand() % 256;
 
     for (const auto i:cluster.indices){
+    //if(find(indicesEtiquetados.begin(), indicesEtiquetados.end(), i) != indicesEtiquetados.end()){
+      cloud->points[i].r = colorR;
+      cloud->points[i].g = colorG;
+      cloud->points[i].b = colorB;
+    //}
+    }  
+  }
+
+  /*for (const auto& cluster : clusters) {
+    int colorR = rand() % 256;
+    int colorG = rand() % 256;
+    int colorB = rand() % 256;
+
+    for (const auto i:cluster.indices){
       if(find(indicesEtiquetados.begin(), indicesEtiquetados.end(), i) != indicesEtiquetados.end()){
         cloud->points[i].r = colorR;
         cloud->points[i].g = colorG;
         cloud->points[i].b = colorB;
       }
     }  
-  }
+  }*/
 
   viewer->removeAllPointClouds();
   viewer->addPointCloud(cloud, "labelCloud");
@@ -274,6 +289,9 @@ vector<PointIndices> differenceOfNormals(PointCloud<PointXYZRGB>::Ptr cloud){
     tree.reset(new search::KdTree<PointXYZRGB>(false));
   }
 
+  // Supongamos que tienes una nube de puntos llamada "cloud"
+  cout << "Tamaño de la nube: " << cloud->size() << " puntos" << endl;
+
   tree->setInputCloud(cloud);
 
   if (scale1 >= scale2) {
@@ -298,6 +316,8 @@ vector<PointIndices> differenceOfNormals(PointCloud<PointXYZRGB>::Ptr cloud){
 
   PointCloud<PointNormal>::Ptr doncloud(new PointCloud<PointNormal>);
   copyPointCloud(*cloud, *doncloud);
+  cout << "Tamaño de la nube cloud: " << cloud->size() << " puntos" << endl;
+  cout << "Tamaño de la nube doncloud: " << doncloud->size() << " puntos" << endl;
 
   cout << "Calculating DoN... " << endl;
   DifferenceOfNormalsEstimation<PointXYZRGB, PointNormal, PointNormal> don;
@@ -311,6 +331,8 @@ vector<PointIndices> differenceOfNormals(PointCloud<PointXYZRGB>::Ptr cloud){
   }
 
   don.computeFeature(*doncloud);
+  cout << "Tamaño de la nube cloud: " << cloud->size() << " puntos" << endl;
+  cout << "Tamaño de la nube doncloud: " << doncloud->size() << " puntos" << endl;
 
   PCDWriter writer;
   writer.write<PointNormal>("don.pcd", *doncloud, false);
@@ -323,13 +345,33 @@ vector<PointIndices> differenceOfNormals(PointCloud<PointXYZRGB>::Ptr cloud){
   range_cond->addComparison(FieldComparison<PointNormal>::ConstPtr(
       new FieldComparison<PointNormal>("curvature", ComparisonOps::GT, threshold)));
 
-  ConditionalRemoval<PointNormal> condrem;
+  /*ConditionalRemoval<PointNormal> condrem;
   condrem.setCondition(range_cond);
   condrem.setInputCloud(doncloud);
 
   PointCloud<PointNormal>::Ptr doncloud_filtered(new PointCloud<PointNormal>);
 
-  condrem.filter(*doncloud);
+  condrem.filter (*doncloud_filtered);
+
+  doncloud = doncloud_filtered;*/
+
+  ConditionalRemoval<PointNormal> condrem;
+  condrem.setCondition(range_cond);
+	condrem.setInputCloud(doncloud);
+
+  PointCloud<PointNormal>::Ptr doncloud_filtered (new PointCloud<PointNormal>);
+
+	boost::shared_ptr<PointIndices> ind(new PointIndices);
+	condrem.getRemovedIndices(*ind);
+  
+  // Apply filter
+	condrem.filter(*doncloud_filtered);
+  
+  //cout << "Indices: " << ind->indices.size() << " Filtered: " << doncloud_filtered->size () << " data points." << endl;
+  cout << "Indices: " << ind->indices.size() << " Filtered: " << doncloud_filtered->size () << " data points." << endl;
+  cout << "Tamaño de la nube cloud: " << cloud->size() << " puntos" << endl;
+  cout << "Tamaño de la nube doncloud: " << doncloud->size() << " puntos" << endl;
+  //cout << "Tamaño de indices: " << indices->indices.size() << endl;
 
   doncloud = doncloud_filtered;
 
